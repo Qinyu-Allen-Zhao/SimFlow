@@ -19,7 +19,7 @@
   font-size: 1.5em;
   margin-bottom: 0.5em;
   line-height: 1.2;
-  color: #397ede;
+  color: #095dd3;
   /* -webkit-text-stroke: 3px #000; Black outline */
   text-shadow:
     1.2px 1.2px 0 rgb(255, 255, 255),
@@ -284,4 +284,8 @@ d-article section{
 
 .finding-box li:last-child {
   margin-bottom: 0;
+}
+
+.affiliations {
+    text-align: center;
 }
