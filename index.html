@@ -88,7 +88,7 @@
     <div class="header-container">
         <div class="header-content">
             <h1>SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows</h1>
-            <p>We propose a simple end-to-end framework to train VAEs and NFs from scratch, outperforming the prior NF-based model STARFlow.</p>
+            <p>We propose a simple end-to-end framework to train a VAE and an NF jointly from scratch, outperforming the prior NF-based model STARFlow, which uses a frozen VAE encoder.</p>
             <div class="button-container">
                 <a href="http://arxiv.org/abs/2511.19428" class="button">Paper</a>
                 <a href="#" class="button">Code (under review)</a>
@@ -141,9 +141,9 @@
             <h2>Method: SimFlow</h2>
             <p>We propose SimFlow to improve the performance of NFs. Our key design is to fix the variance (which would otherwise be predicted by the VAE encoder) to a constant (e.g., 0.5).</p>
             <ul style="list-style-type: disc;">
-                <li><b>Simple:</b> this method allows the encoder to output a broader distribution of tokens and the decoder to learn to reconstruct clean images from the augmented token distribution, avoiding additional noise or denoising design in STARFlow</li>
+                <li><b>Simple:</b> this method allows the encoder to output a broader distribution of tokens and the decoder to learn to reconstruct clean images from the augmented token distribution, avoiding additional noise or denoising design in STARFlow.</li>
                 <li><b>End-to-end:</b> fixed variance simplifies the VAE evidence lower bound, making it stable to train an NF with a VAE jointly.</li>
-                <li><b>Good performance:</b> on the ImageNet 256x256 generation task, our model SimFlow obtains a gFID score of 2.15, outperforming the prior work STARFlow (gFID 2.40). Moreover, SimFlow can be seamlessly integrated with REPA-E method and achieves an improved gFID of 1.91, setting a new state of the art among NFs.</li>
+                <li><b>Good performance:</b> on the ImageNet $256\times 256$ generation task, our model SimFlow obtains a gFID score of 2.15, outperforming the prior work STARFlow (gFID 2.40). Moreover, SimFlow can be seamlessly integrated with REPA-E method and achieves an improved gFID of 1.91, setting a new state of the art among NFs.</li>
             </ul>
             </p>    
             <d-figure>
