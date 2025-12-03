@@ -1,406 +1,102 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows</title>
 
-<script type="text/javascript" charset="utf-8" src="https://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script>
-<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="template.v2.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/5.16.0/d3.min.js"></script>
 
-<style type="text/css">
-body {
-    font-family: "Titillium Web", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
-    font-weight: 300;
-    font-size: 17px;
-    margin-left: auto;
-    margin-right: auto;
-}
+    <script>
+      window.MathJax = {
+        loader: {load: ['[tex]/boldsymbol']},
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          displayMath: [['\\[','\\]'], ['$$','$$']],
+          packages: {'[+]': ['ams', 'textmacros', 'boldsymbol']},
+          macros: {
+            vx: "{\\boldsymbol{x}}",
+            vphi: "{\\boldsymbol{\\phi}}",
+            vF: "{\\boldsymbol{F}}",
+            vG: "{\\boldsymbol{G}}",
+            vI: "{\\boldsymbol{I}}",
+            vz: "{\\boldsymbol{z}}",
+            vn: "{\\boldsymbol{n}}",
+            vu: "{\\boldsymbol{u}}",
+            vf: "{\\boldsymbol{f}}",
+            sg: "\\operatorname{sg}",
+            vvG: "{\\boldsymbol{v}_\\text{G}}",
+            vvN: "{\\boldsymbol{v}_\\text{N}}",
+            E: "\\mathbb{E}",
+            dtau: "\\,d\\tau"
+          }
+        },
+        svg: { fontCache: 'global' }
+      };
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
-@media screen and (min-width: 980px){
-    body {
-        width: 980px;
-    }
-}
+    <link href="https://db.onlinewebfonts.com/c/860c3ec7bbc5da3e97233ccecafe522e?family=Bitstream+Charter" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet">
 
-h1 {
-    font-weight:300;
-    line-height: 1.15em;
-}
+    <link rel="stylesheet" href="style.css">
 
-h2 {
-    font-size: 1.75em;
-}
-a:link,a:visited {
-    color: #1E3A8A;
-    text-decoration: none;
-}
-a:hover {
-    color: #208799;
-}
-h1 {
-    text-align: center;
-}
-h2,h3 {
-    text-align: left;
-}
+    <style>
+        body {
+            font-family: 'Bitstream Charter', 'Charter', serif;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+        /* Layout corrections */
+        .display-table th, .display-table td { text-align: center; }
+        .display-table th:first-child, .display-table td:first-child { text-align: left; }
+        .mjx-chtml { font-family: 'Bitstream Charter', serif !important; }
 
-h1 {
-    font-size: 40px;
-    font-weight: 500;
-}
-h2 {
-    font-weight: 400;
-    margin: 16px 0px 4px 0px;
-}
-h3 {
-    font-weight: 600;
-    margin: 16px 0px 4px 0px;
-}
+        /* Style for equation labels */
+        .eq-caption {
+            font-family: 'Bitstream Charter', serif;
+            font-style: italic;
+            color: #666;
+            font-size: 0.85rem;
+            text-align: right; /* Or center, depending on preference */
+            margin-top: -0.5rem;
+            margin-bottom: 1.5rem;
+            margin-right: 1rem;
+        }
 
-.paper-title {
-    padding: 1px 0px 1px 0px;
-}
-section {
-    margin: 32px 0px 32px 0px;
-    text-align: justify;
-    clear: both;
-}
-.col-5 {
-     width: 20%;
-     float: left;
-}
-.col-4 {
-     width: 25%;
-     float: left;
-}
-.col-3 {
-     width: 33%;
-     float: left;
-}
-.col-2 {
-     width: 50%;
-     float: left;
-}
-.col-1 {
-     width: 100%;
-     float: left;
-}
+        /* Wrapfig Utility */
+        .wrap-container {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+            margin: 2rem 0;
+        }
+        .wrap-text { flex: 1.2; text-align: justify; }
+        .wrap-fig { flex: 0.8; margin: 0; }
+        @media (max-width: 800px) { .wrap-container { flex-direction: column; } }
 
-.author-row, .affil-row {
-    font-size: 26px;
-}
+        section { margin-top: 3rem; margin-bottom: 3rem; }
+        p { text-align: justify; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
 
-.author-row-new {
-    text-align: center;
-}
-
-.author-row-new a {
-    display: inline-block;
-    font-size: 20px;
-    padding: 4px;
-}
-
-.author-row-new sup {
-    color: #313436;
-    font-size: 12px;
-}
-
-.affiliations-new {
-    font-size: 18px;
-    text-align: center;
-    width: 80%;
-    margin: 0 auto;
-    margin-bottom: 20px;
-}
-
-.row {
-    margin: 16px 0px 16px 0px;
-}
-.authors {
-    font-size: 26px;
-}
-.affiliations {
-    font-size: 18px;
-}
-.affil-row {
-    margin-top: 18px;
-}
-.teaser {
-    max-width: 100%;
-}
-.text-center {
-    text-align: center;  
-}
-.screenshot {
-    width: 256px;
-    border: 1px solid #ddd;
-}
-.screenshot-el {
-    margin-bottom: 16px;
-}
-hr {
-    height: 1px;
-    border: 0;
-    border-top: 1px solid #ddd;
-    margin: 0;
-}
-.material-icons {
-    vertical-align: -6px;
-}
-p {
-    line-height: 1.25em;
-}
-.caption {
-    font-size: 16px;
-    color: #666;
-    margin-top: 4px;
-    margin-bottom: 10px;
-}
-video {
-    display: block;
-    margin: auto;
-}
-figure {
-    display: block;
-    margin: auto;
-    margin-top: 10px;
-    margin-bottom: 10px;
-}
-#bibtex pre {
-    font-size: 14px;
-    background-color: #eee;
-    padding: 16px;
-}
-.green {
-    color: #1E3A8A;
-    font-weight: bold;
-}
-.orange {
-    color: #d35400;
-    font-weight: bold;
-}
-.flex-row {
-    display: flex;
-    flex-flow: row wrap;
-    padding: 0;
-    margin: 0;
-    list-style: none;
-}
-
-.coming-soon {
-    position: absolute;
-    top: -15px;
-    right: -15px;
-}
-
-.paper-btn:hover {
-    color: #FF8563;
-    transform: translateY(-2px);
-}
-
-.paper-btn-parent {
-    display: flex;
-    justify-content: center;
-    margin: 16px 0px;
-    gap: 25px;
-    font-size: 20px;
-}
-
-.github-btn:hover {
-    color: #FF8563;
-    transform: translateY(-2px);
-}
-
-.container {
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: 16px;
-    padding-right: 16px;
-}
-
-.venue {
-    font-size: 23px;
-}
-
-.topnav {
-    background-color: #EEEEEE;
-    overflow: hidden;
-}
-
-.topnav div {
-    max-width: 1070px;
-    margin: 0 auto;
-}
-
-.topnav a {
-    display: inline-block;
-    color: black;
-    text-align: center;
-    vertical-align: middle;
-    padding: 16px 16px;
-    text-decoration: none;
-    font-size: 18px;
-}
-
-.topnav img {
-    padding: 2px 0px;
-    width: 100%;
-    margin: 0.2em 0px 0.3em 0px;
-    vertical-align: middle;
-}
-
-pre {
-    font-size: 0.9em;
-    padding-left: 7px;
-    padding-right: 7px;
-    padding-top: 3px;
-    padding-bottom: 3px;
-    border-radius: 3px;
-    background-color: rgb(235, 235, 235);
-    overflow-x: auto;
-}
-
-.download-thumb {
-    display: flex;
-}
-
-@media only screen and (max-width: 620px) {
-    .download-thumb {
-        display: none;
-    }
-}
-
-.paper-stuff {
-    width: 50%;
-    font-size: 20px;
-}
-
-@media only screen and (max-width: 620px) {
-    .paper-stuff {
-        width: 100%;
-    }
-}
-* {
-  box-sizing: border-box;
-}
-
-.column {
-  text-align: center;
-  float: left;
-  width: 16.666%;
-  padding: 5px;
-}
-.column3 {
-  text-align: center;
-  float: left;
-  width: 33.333%;
-  padding: 5px;
-}
-.border-right {
-    border-right: 1px solid black;
-}
-.border-bottom{
-    border-bottom: 1px solid black;
-}
-
-/* Clearfix (clear floats) */
-.row::after {
-  content: "";
-  clear: both;
-  display: table;
-}
-
-.image-grid {
-    display: grid;
-    grid-template-columns: 1fr 1.25fr;
-    gap: 10px;
-    width: 100%; 
-}
-
-.image-grid img {
-    width: 100%; 
-}
-
-.image-grid img:first-child {
-    object-fit: contain;
-}
-/* Responsive layout - makes the three columns stack on top of each other instead of next to each other */
-@media screen and (max-width: 500px) {
-  .column {
-    width: 100%;
-  }
-}
-@media screen and (max-width: 500px) {
-  .column3 {
-    width: 100%;
-  }
-}
-
-.figure img {
-    width: 100%; 
-}
-
-.image-grid-three {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 10px;
-    width: 90%;
-    justify-items: center;
-    margin: 0 auto;
-}
-
-.image-grid-three img {
-    width: 100%; 
-}
-
-.image-grid-tab {
-    text-align: center;
-    justify-content: center;
-    display: grid;
-    place-items: center;
-    grid-template-columns: 1fr 1.22fr;
-    gap: 10px;
-    width: 90%;
-    justify-items: center;
-    margin: 0 auto;
-}
-
-.image-grid-tab img {
-    width: 100%; 
-}
-
-blockquote {
-    background-color: rgba(40, 40, 40, 0.2);
-    padding: 0px;
-    margin: 2px 0;
-    border-radius: 10px;
-    padding-top: 1px;
-    padding-bottom: 1px;
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
-</style>
-
-<script type="text/javascript" src="../js/hidebib.js"></script>
-    <link href='https://fonts.googleapis.com/css?family=Titillium+Web:400,600,400italic,600italic,300,300italic' rel='stylesheet' type='text/css'>
-    <head>
-        <title>SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta property="og:description" content="SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows"/>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-        <link href="https://fonts.googleapis.com/css2?family=FontAwesome" rel="stylesheet">
-        <meta name="twitter:card" content="summary_large_image">
-        <meta name="twitter:title" content="SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows">
-    </head>
-
- <body>
-<div class="container">
-    <div class="paper-title">
-    <h1>
-        <font color="#1E3A8A">SimFlow</font>: Simplified and End-to-End Training of Latent Normalizing Flows
-    </h1>
+    <div class="header-container">
+        <div class="header-content">
+            <h1>SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows</h1>
+            <p>We propose a simple end-to-end framework to train VAEs and NFs from scratch, outperforming the prior NF-based model STARFlow.</p>
+            <div class="button-container">
+                <a href="http://arxiv.org/abs/2511.19428" class="button">Paper</a>
+                <a href="#" class="button">Code (under review)</a>
+                <a href="#" class="button">Models (under review)</a>
+            </div>
+        </div>
     </div>
 
-    <div id="authors">
+    <d-article>
         <p align="center">
             <a href="https://www.linkedin.com/in/qinyu-zhao/" target="_blank">Qinyu&nbsp;Zhao</a><sup>1,2</sup> &ensp; <b>&middot;</b> &ensp;
             <a href="https://scholar.google.com/citations?user=IS0-qKcAAAAJ&hl=zh-CN" target="_blank">Guangting&nbsp;Zheng</a><sup>2</sup> &ensp; <b>&middot;</b> &ensp;
@@ -417,43 +113,45 @@ blockquote {
           <p align="center">
             <sup>&Dagger;</sup> Corresponding Author &emsp; <sup>&dagger;</sup>Project Lead &emsp; <br>
           </p>
-          
-
-        <div style="clear: both">
-            <div class="paper-btn-parent">
-                <a class="paper-btn" href="https://arxiv.org/abs/2505.20297">
-                    <span class="fas fa-file-alt"></span> 
-                    Paper
-                </a>   
-                <!-- <a class="github-btn" href="https://github.com/Qinyu-Allen-Zhao/DiSA">
-                    <span class="fab fa-github"></span> 
-                    Code
-                </a>            -->
-           </div>
         </div>
-    </div>
 
-    <section>
-        <h2>Overview</h2>
-        <hr>
-        <p>
-            We propose SimFlow to improve the performance of Normalizing Flows (NFs). Our key design is to fix the variance (which would otherwise be predicted by the VAE encoder) to a constant (e.g., 0.5).
+        <d-contents>
+            <nav>
+                <h4>Contents</h4>
+                <div><a href="#overview">Overview</a></div>
+                <div><a href="#insights">Key Insights</a></div>
+                <div><a href="#method">SimFlow</a></div>
+                <div><a href="#results">Experiments</a></div>
+                <div><a href="#conclusion">Conclusion</a></div>
+            </nav>
+        </d-contents>
+
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                Normalizing Flows (NFs) learn invertible mappings between the data and a Gaussian distribution. Prior works usually suffer from two limitations. 
+                <ul style="list-style-type: disc;">
+                <li><strong>First</strong>, they add random noise to training samples or VAE latents as data augmentation, introducing complex pipelines including extra noising and denoising steps. </li>
+                <li><strong>Second</strong>, they use a pretrained and frozen VAE encoder, resulting in suboptimal reconstruction and generation quality. </li>
+                </ul>
+            </p>
+        </section>
+
+        <section id="method">
+            <h2>Method: SimFlow</h2>
+            <p>We propose SimFlow to improve the performance of NFs. Our key design is to fix the variance (which would otherwise be predicted by the VAE encoder) to a constant (e.g., 0.5).</p>
             <ul style="list-style-type: disc;">
                 <li><b>Simple:</b> this method allows the encoder to output a broader distribution of tokens and the decoder to learn to reconstruct clean images from the augmented token distribution, avoiding additional noise or denoising design in STARFlow</li>
-            </ul>
-            <ul style="list-style-type: disc;">
                 <li><b>End-to-end:</b> fixed variance simplifies the VAE evidence lower bound, making it stable to train an NF with a VAE jointly.</li>
-            </ul>
-            <ul style="list-style-type: disc;">
                 <li><b>Good performance:</b> on the ImageNet 256x256 generation task, our model SimFlow obtains a gFID score of 2.15, outperforming the prior work STARFlow (gFID 2.40). Moreover, SimFlow can be seamlessly integrated with REPA-E method and achieves an improved gFID of 1.91, setting a new state of the art among NFs.</li>
             </ul>
             </p>    
-
-            <div class="figure" style="width: 100%; margin: 0 auto;">
-                <img src="assets/overview.png" alt="Overview">
-            </div>
-            <p style="color:#777; font-size:0.9em;">
-                Comparison of our framework with closely related methods. Solid arrows indicate the forward pass,
+            <d-figure>
+                <figure>
+                    <img src="assets/overview.png" alt="Method" style="width:100%; display: block; margin: auto;">
+                    <figcaption>
+                        <strong>Comparison of our framework with closely related methods.</strong>
+                        Solid arrows indicate the forward pass,
                 while dashed arrows denote gradient flows.
                 We label frozen modules in
                 <span style="background-color:#E8E8E8;">gray</span>,
@@ -461,93 +159,131 @@ blockquote {
                 <span style="background-color:#D2F3D7;">green</span>,
                 and VAE modules involved in training in
                 <span style="background-color:#F9D1D4;">red</span>.
+                    </figcaption>
+                </figure>
+            </d-figure>
+        </section>
+
+        <section id="insights">
+            <h2>Key Insights</h2>
+            <p><strong>1. VAEs with fixed variances are more robust to latent perturbation.</strong></p>
+            <ul style="list-style-type: disc;">
+                <li> A VAE with a large and fixed variance can maintain reconstruction quality under latent noise, while the performance of a VAE with learnable variance degrades significantly. 
+                <li> For VAEs with a large variance, the images reconstructed from linearly interpolated latents still clearly show the main subjects (the cat or the dog), rather than blending them. 
+            </ul>
+
+            <d-figure>
+                <figure>
+                    <img src="assets/vae_robustness.png" alt="VAE Robustness" style="width:100%; display: block; margin: auto;">
+                    <figcaption>
+                        <strong>Robustness of VAEs with fixed variances.</strong>
+                        (a) A VAE with a large and fixed variance can maintain reconstruction quality under latent noise, while the performance of a VAE with learnable variance degrades significantly. (b) For VAEs with a large variance, the images reconstructed from linearly interpolated latents still clearly show the main subjects (the cat or the dog), rather than blending them. 'Learnable' indicates a standard VAE with learnable variance, while '$\bar{\sigma}^2=x^2$' denotes a VAE with a fixed variance of $x^2$.
+                    </figcaption>
+                </figure>
+            </d-figure>
+
+            <p><strong>2. End-to-end training makes latent space possibly more suitable for developing generative models.</strong></p>
+            <ul style="list-style-type: disc;">
+                <li> Spectral entropy measures the randomness of frequency components; lower values indicate simpler data distributions in the frequency domain. 
+                <li> End-to-end latent sapce has a lower ratio of high-frequency components. 
+                <li> Total variation captures the overall local changes across tokens; lower values imply smoother latents. 
+                <li> Autocorrelation reflects how similar a token sequence is to a shifted version of itself; higher autocorrelation indicates stronger spatial consistency.
+            </ul>
+            <d-figure>
+                <figure>
+                    <img src="assets/vae_latent_space.png" alt="VAE Latent Space" style="width:100%; display: block; margin: auto;">
+                    <figcaption>
+                        <strong>End-to-end training affects the latent space, making it possibly more suitable for developing generative models.</strong>
+                    </figcaption>
+                </figure>
+            </d-figure>
+
+            <p><strong>3. Variant studies.</strong></p>
+            <ul style="list-style-type: disc;">
+                <li> Only setting a fixed variance is not enough.</li>
+            </ul>
+            <ul style="list-style-type: disc;">
+                <li> Good reconstruction does not mean good generation quality.</li>
+            </ul>
+            <ul style="list-style-type: disc;">
+                <li> The end-to-end training significantly improves the generation quality.</li>
+
+            <d-figure>
+                <figure>
+                    <img src="assets/variants.png" alt="Variant Studies" style="width:80%; display: block; margin: auto;">
+                    <figcaption>
+                        <strong>Variant studies.</strong>'Frozen VAE' means both VAE encoder and decoder are frozen during training. 'Frozen enc' means the decoder is trained. 'End-to-end' means VAE encoder and decoder, and the NF are jointly trained from scratch. 'Learnable var' means the variance is predicted by the VAE, while  'Fixed var' is our method with $\bar{\sigma}^2=0.5^2$. 'LN' denotes applying a layer normalization on the VAE encoder. 'Noise augmented' indicates adding Gaussian noise to VAE latents as done by STARFlow.
+                    </figcaption>
+                </figure>
+            </d-figure>
+            </div>
+        </section>
+
+        <section id="results">
+            <h2>Experimental Results</h2>
+            <p>
+                On ImageNet class-conditional generation, our method SimFlow establishes a new state-of-the-art, significantly outperforming NF-based baselines.
             </p>
-    </section>
 
-    <section>
-        <h2>Key Insights</h2>
-        <hr>
-        <h4>VAEs with fixed variances are more robust to latent perturbation.</h4>
-        <div class="figure" style="width: 100%; margin: 0 auto;">
-            <img src="assets/vae_robustness.png" alt="VAE Robustness">
-        </div>
-        <p style="color:#777; font-size:0.9em;"> 'Learnable' indicates a standard VAE with learnable variance,
-            while <span>\(\bar{\sigma}^2 = x^2\)</span>
-            denotes a VAE with a fixed variance of <span>\(x^2\)</span>.
-        </p>
-        <ul style="list-style-type: disc;">
-            <li> (a) A VAE with a large and fixed variance can maintain reconstruction quality under latent noise, while the performance of a VAE with learnable variance degrades significantly. 
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> (b) For VAEs with a large variance, the images reconstructed from linearly interpolated latents still clearly show the main subjects (the cat or the dog), rather than blending them. 
-        </ul>
+            <h3>ImageNet $256\times 256$</h3>
+            <d-figure>
+                <figure>
+                    <img src="assets/results.png" alt="Results 256x256" style="width:100%; display: block; margin: auto;">
+                    <figcaption><strong>Comparison on ImageNet $256\times 256$.</strong> SimFlow (with or without REPA-E) achieves better performance than STARFlow on ImageNet $256\times 256$.</figcaption>
+                </figure>
+            </d-figure>
 
-        <h4>End-to-end training makes latent space more suitable for developing generative models.</h4>
-        <div class="figure" style="width: 100%; margin: 0 auto;">
-            <img src="assets/vae_latent_space.png" alt="VAE Latent Space">
-        </div>
-        <ul style="list-style-type: disc;">
-            <li> (a) Spectral entropy measures the randomness of frequency components; lower values indicate simpler data distributions in the frequency domain. 
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> (b) End-to-end latent sapce has a lower ratio of high-frequency components. 
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> (c) Total variation captures the overall local changes across tokens; lower values imply smoother latents. 
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> (d) Autocorrelation reflects how similar a token sequence is to a shifted version of itself; higher autocorrelation indicates stronger spatial consistency.
-        </ul>
+            <h3>ImageNet $512\times 512$</h3>
+            <d-figure>
+                <figure>
+                    <img src="assets/results_512.png" alt="Results 512x512" style="width:90%; display: block; margin: auto;">
+                    <figcaption><strong>Comparison on ImageNet $512\times 512$.</strong> SimFlow with REPA-E achieves better performance than STARFlow on ImageNet $512\times 512$.</figcaption>
+                </figure>
+            </d-figure>
 
-        <h4>Variant studies.</h4>
-        <div class="figure" style="width: 50%; margin: 0 auto;">
-            <img src="assets/variants.png" alt="Variant Studies">
-        </div>
-        <ul style="list-style-type: disc;">
-            <li> Only setting a fixed variance is not enough.</li>
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> Good reconstruction does not mean good generation quality.</li>
-        </ul>
-        <ul style="list-style-type: disc;">
-            <li> The end-to-end training significantly improves the generation quality.</li>
-    </section>
+            <h3>Qualitative Results</h3>
+            <d-figure>
+                <figure>
+                    <img src="assets/examples.png" alt="Examples" style="width:100%; display: block; margin: auto;">
+                    <figcaption><strong>Selected samples.</strong> More uncurated samples can be found in the paper.</figcaption>
+                </figure>
+            </d-figure>
 
-    <section>
-        <h2>Results</h2>
-        <hr>
-        <p>
-            SimFlow (with REPA-E) achieves better performance than STARFlow on ImageNet 256x256.
-        </p>
-        <div class="figure">
-            <img src="assets/results.png" alt="Results">
-        </div>
+        <section id="conclusion">
+            <h2>Conclusion</h2>
+            <p>
+                This paper presents SimFlow, an end-to-end training framework for latent NFs by simply fixing the VAE variance. This makes latent space smoother and helps NFs generalize better when sampling, without needing extra noise schedules or denoising steps. Experiments show that SimFlow improves generation quality and speeds up training compared to existing NF methods. Future work will expand this framework to text-to-image training and explore a second-stage training with the VAE fixed after joint training.
+            </p>
+            <div class="button-container" style="justify-content: center; margin-top: 1rem;">
+                <a href="#" class="button">Read the Full Paper</a>
+            </div>
+        </section>
+
+        <d-appendix>
+            <h3>Appendix</h3>
+
+            <p style="font-size: 14px; color: #666; margin-top: 20px;">
+        We thank the <a href="https://sihyun.me/REPA/" style="color: #1E3A8A;">REPA</a>, <a href="https://end2end-diffusion.github.io/" style="color: #1E3A8A;">REPA-E</a>, and <a href="https://data-free-flow-distill.github.io/" style="color: #1E3A8A;">FreeFlow</a> projects for the website template.
+
+            
+            <p class="bibtex">
+                @article{zhao2025simflow,<br>
+                &nbsp;&nbsp;title={SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows},<br>
+                &nbsp;&nbsp;author={Zhao, Qinyu and Zheng, Guangting and Yang, Tao and Zhu, Rui <br>
+                &nbsp;&nbsp;&nbsp;&nbsp;and Leng, Xingjian and Gould, Stephen and Zheng, Liang},<br>
+                &nbsp;&nbsp;year={2025},<br>
+                &nbsp;&nbsp;journal={arXiv preprint},<br>
+                }
+            </p>
+        </d-appendix>
+
+        <d-bibliography src="bibliography.bib"></d-bibliography>
+
         
-        <p>
-            Selected examples generated by SimFlow + REPA-E on ImageNet 512x512 and 256x256.
-        </p>
-        <div class="figure">
-            <img src="assets/examples.png" alt="Generation Examples">
-        </div>
-
-        You can see more results in our paper.
-    </section>
-
-    <section id="bibtex">
-        <h2>Citation</h2>
-        <hr>
-        <pre><code>@article{zhao2025simflow,
-    title={SimFlow: Simplified and End-to-End Training of Latent Normalizing Flows},
-    author={Zhao, Qinyu and Zheng, Guangting and Yang, Tao and Zhu, Rui and Leng, Xingjian and Gould, Stephen and Zheng, Liang},
-    year={2025},
-    journal={arXiv preprint},
-}</code></pre>
-    </section>
-
-    <p style="text-align: center; font-size: 14px; color: #666; margin-top: 20px;">
-        We thank the <a href="https://sihyun.me/REPA/" style="color: #1E3A8A;">REPA</a> and <a href="https://end2end-diffusion.github.io/" style="color: #1E3A8A;">REPA-E</a> projects for the website template.
     </p>
+    </d-article>
 
-</div>
+
+    <script src="contents_bar.js"></script>
 </body>
 </html>
