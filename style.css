@@ -4,8 +4,11 @@
   background: url("assets/header_bg.png") no-repeat center;
   background-size: cover;
   color: #242728;
-  text-align: center; /* Center content on small screens */
   padding: 20px; /* Reduced padding for small screens */
+
+  display: flex;
+  justify-content: center;
+  text-align: center; /* Center content on small screens */
 }
 
 
